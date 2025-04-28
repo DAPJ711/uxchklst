@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resultados UX</title>
     <style>
@@ -9,126 +10,133 @@
             font-family: Arial, sans-serif;
         }
         ul {
-            list-style-type: '\274C';
+            list-style-type: '\274C'; /* ❌ */
         }
-
+        button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
     </style>
+    <!-- Importamos SheetJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     <h1>📋 Resultados UX</h1>
 
-    <!-- Mostrar datos del evaluador -->
     <div id="evaluator-data">
-        <p><b>Nombre del Evaluador: </b><span id="nombre"></span></p>
-        <p><b>Identificación: </b><span id="id"></span></p>
-        <p><b>Edad: </b><span id="edad"></span> años</p>
-        <p><b>Ocupación: </b><span id="profesion"></span></p>
+Nombre del Evaluador: Diana
+Identificación: 1096062123
+Edad: 21 años
+Ocupación: estudiante
     </div>
 
     <div id="results"></div>
 
     <div id="improvements" style="display: none;">
         <p id="improvement-message"></p>
-        <ul id="improvement-list">
-            <!-- Los elementos de la lista de mejoras se agregarán aquí dinámicamente -->
-        </ul>
+        <ul id="improvement-list"></ul>
     </div>
 
     <div id="success" style="display: none;">
         <p></p>
     </div>
 
+    <button onclick="downloadExcel()">Descargar resultados en Excel (.xlsx)</button>
+
     <script>
+        var allResults = JSON.parse(localStorage.getItem('allResults')) || [];
+
+        var nombre = '', id = '', edad = '', profesion = '', percentage = 0, observacion = '', mejoras = [];
+
         function showResults() {
             var params = new URLSearchParams(window.location.search);
-            var totalItems = 14; // Número total de ítems en el checklist
+            var totalItems = 14;
             var score = 0;
             for (var i = 1; i <= totalItems; i++) {
-            if (params.get('checklist_item_' + i) === 'SI') score++;
+                if (params.get('checklist_item_' + i) === 'SI') score++;
             }
-            var percentage = (score / totalItems) * 100;
-            document.getElementById('results').innerHTML = "<p><b>Puntaje:</b> " + percentage.toFixed(2) + "%</p>";
+            percentage = (score / totalItems) * 100;
+Puntaje: 100%
 
- // Mostrar datos del evaluador
-            document.getElementById('nombre').textContent = params.get('nombre');
-            document.getElementById('id').textContent = params.get('id');
-            document.getElementById('edad').textContent = params.get('edad');
-            document.getElementById('profesion').textContent = params.get('profesion');
+            nombre = params.get('nombre') || '';
+            id = params.get('id') || '';
+            edad = params.get('edad') || '';
+            profesion = params.get('profesion') || '';
 
-            var message = ""; // Variable para almacenar el mensaje correspondiente
+            document.getElementById('nombre').textContent = nombre;
+            document.getElementById('id').textContent = id;
+            document.getElementById('edad').textContent = edad;
+            document.getElementById('profesion').textContent = profesion;
+
             if (percentage === 0) {
-                message = "😬 No cumple con ningún aspecto en materia de usabilidad y UX. Considerar lo siguiente;";
+                observacion = "😬 No cumple con ningún aspecto en materia de usabilidad y UX. Considerar lo siguiente:";
                 document.getElementById('improvements').style.display = 'block';
-                document.getElementById('improvement-message').innerHTML = `<strong>Observación:</strong> ${message}`;
+                document.getElementById('improvement-message').innerHTML = `<strong>Observación:</strong> ${observacion}`;
             } else if (percentage <= 50) {
-                message = "😐 Existen varios aspectos que aún deben considerarse en materia de usabilidad y UX;";
+                observacion = "😐 Existen varios aspectos que aún deben considerarse en materia de usabilidad y UX:";
                 document.getElementById('improvements').style.display = 'block';
-                document.getElementById('improvement-message').innerHTML = `<strong>Observación:</strong> ${message}`;
+                document.getElementById('improvement-message').innerHTML = `<strong>Observación:</strong> ${observacion}`;
             } else if (percentage < 100) {
-                message = "🙂 Algunos aspectos podrían mejorarse en términos de usabilidad y experiencia de usuario;";
+                observacion = "🙂 Algunos aspectos podrían mejorarse en términos de usabilidad y experiencia de usuario:";
                 document.getElementById('improvements').style.display = 'block';
-                document.getElementById('improvement-message').innerHTML = `<strong>Observación:</strong> ${message}`;
+                document.getElementById('improvement-message').innerHTML = `<strong>Observación:</strong> ${observacion}`;
             } else {
-                message = "😄 Cumple satisfactoriamente con todos los aspectos evaluados en materia de usabilidad y UX.";
+                observacion = "😄 Cumple satisfactoriamente con todos los aspectos evaluados en materia de usabilidad y UX.";
                 document.getElementById('success').style.display = 'block';
-                document.getElementById('success').getElementsByTagName('p')[0].innerHTML = `<strong>Observación:</strong> ${message}`;;
+                document.getElementById('success').getElementsByTagName('p')[0].innerHTML = `<strong>Observación:</strong> ${observacion}`;
             }
 
-            if (percentage < 100) {
-                var improvementList = document.getElementById('improvement-list');
-                improvementList.innerHTML = ""; // Limpiar la lista antes de agregar nuevos elementos
-
-                for (var i = 1; i <= totalItems; i++) {
-                    if (params.get('checklist_item_' + i) !== 'SI') {
-                        switch(i) {
-                            case 1:
-                                improvementList.innerHTML += "<li style='padding-bottom: 0.5em'>Secciones difíciles de encontrar y acceder.</li>";
-                                break;
-                            case 2:
-                                improvementList.innerHTML += "<li style='padding-bottom: 0.5em'>Navegación poco clara y directa.</li>";
-                                break;
-                            case 3:
-                                improvementList.innerHTML += "<li style='padding-bottom: 0.5em'>Colores y tipografía incoherentes o ilegibles.</li>";
-                                break;
-                            case 4:
-                                improvementList.innerHTML += "<li style='padding-bottom: 0.5em'>Diseño desordenado y poco profesional.</li>";
-                                break;
-                            case 5:
-                                improvementList.innerHTML += "<li style='padding-bottom: 0.5em'>Dificultad para completar tareas principales.</li>";
-                                break;
-                            case 6:
-                                improvementList.innerHTML += "<li style='padding-bottom: 0.5em'>Botones y enlaces poco claros.</li>";
-                                break;
-                            case 7:
-                                improvementList.innerHTML += "<li style='padding-bottom: 0.5em'>Elementos interactivos con fallos.</li>";
-                                break;
-                            case 8:
-                                improvementList.innerHTML += "<li style='padding-bottom: 0.5em'>Interacción poco intuitiva para el usuario.</li>";
-                                break;
-                            case 9:
-                                improvementList.innerHTML += "<li style='padding-bottom: 0.5em'>Ubicación y visualización de productos deficiente.</li>";
-                                break;
-                            case 10:
-                                improvementList.innerHTML += "<li style='padding-bottom: 0.5em'>Información de compra poco accesible.</li>";
-                                break;
-                            case 11:
-                                improvementList.innerHTML += "<li style='padding-bottom: 0.5em'>Propuesta de valor del negocio poco clara.</li>";
-                                break;
-                            case 12:
-                                improvementList.innerHTML += "<li style='padding-bottom: 0.5em'>Diseño no facilita conversión y ventas.</li>";
-                                break;
-                            case 13:
-                                improvementList.innerHTML += "<li style='padding-bottom: 0.5em'>Visualización incorrecta en dispositivos y/o navegadores.</li>";
-                                break;
-                            case 14:
-                                improvementList.innerHTML += "<li style='padding-bottom: 0.5em'>Tiempos de carga lentos y con problemas.</li>";
-                                break;
-                            default:
-                                break;
-                        }
+            var improvementList = document.getElementById('improvement-list');
+            improvementList.innerHTML = "";
+            for (var i = 1; i <= totalItems; i++) {
+                if (params.get('checklist_item_' + i) !== 'SI') {
+                    let item = '';
+                    switch(i) {
+                        case 1: item = "Secciones difíciles de encontrar y acceder."; break;
+                        case 2: item = "Navegación poco clara y directa."; break;
+                        case 3: item = "Colores y tipografía incoherentes o ilegibles."; break;
+                        case 4: item = "Diseño desordenado y poco profesional."; break;
+                        case 5: item = "Dificultad para completar tareas principales."; break;
+                        case 6: item = "Botones y enlaces poco claros."; break;
+                        case 7: item = "Elementos interactivos con fallos."; break;
+                        case 8: item = "Interacción poco intuitiva para el usuario."; break;
+                        case 9: item = "Ubicación y visualización de productos deficiente."; break;
+                        case 10: item = "Información de compra poco accesible."; break;
+                        case 11: item = "Propuesta de valor del negocio poco clara."; break;
+                        case 12: item = "Diseño no facilita conversión y ventas."; break;
+                        case 13: item = "Visualización incorrecta en dispositivos y/o navegadores."; break;
+                        case 14: item = "Tiempos de carga lentos y con problemas."; break;
+                    }
+                    if (item) {
+                        improvementList.innerHTML += "<li style='padding-bottom: 0.5em'>" + item + "</li>";
+                        mejoras.push(item);
                     }
                 }
             }
+
+            // Almacenar los resultados del nuevo usuario en localStorage
+            var result = {
+                "Nombre del Evaluador": nombre,
+                "Identificación": id,
+                "Edad": edad,
+                "Ocupación": profesion,
+                "Puntaje (%)": percentage.toFixed(2),
+                "Observaciones": observacion,
+                "Mejoras": mejoras.join(' | ')
+            };
+
+            allResults.push(result);
+            localStorage.setItem('allResults', JSON.stringify(allResults));
+        }
+
+        function downloadExcel() {
+            const worksheet = XLSX.utils.json_to_sheet(allResults);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Resultados UX");
+
+            XLSX.writeFile(workbook, "resultados_ux.xlsx");
         }
 
         window.onload = showResults;
